@@ -38,7 +38,11 @@ class RLDSBatchTransform:
     def __call__(self, rlds_batch: Dict[str, Any]) -> Dict[str, Any]:
         """Converts a RLDS batch to the format expected by the OpenVLA collator/models."""
         dataset_name, action = rlds_batch["dataset_name"], rlds_batch["action"][0]
-        img = Image.fromarray(rlds_batch["observation"]["image_primary"][0])
+        #print(f"image shape: {rlds_batch['observation']['image_primary'][0].shape}")
+        img_1 = Image.fromarray(rlds_batch["observation"]["image_primary"][0][:, :, :3])
+        img_2 = Image.fromarray(rlds_batch["observation"]["image_primary"][0][:, :, 3:6])
+        img_3 = Image.fromarray(rlds_batch["observation"]["image_primary"][0][:, :, 6:9])
+        img_4 = Image.fromarray(rlds_batch["observation"]["image_primary"][0][:, :, 9:12])
         lang = rlds_batch["task"]["language_instruction"].decode().lower()
 
         # Construct Chat-based Prompt =>> Input is default query + language instruction, output are the action tokens
@@ -57,7 +61,12 @@ class RLDSBatchTransform:
         # Tensorize =>> Run Image Transform to get `pixel_values` =>> Return
         #   =>> IMPORTANT :: IF WE'RE USING HF LLM.forward(..., labels=labels), SHIFTING HAPPENS _INSIDE_ MODEL!
         input_ids, labels = torch.tensor(input_ids), torch.tensor(labels)
-        pixel_values = self.image_transform(img)
+        pixel_values_1 = self.image_transform(img_1)
+        pixel_values_2 = self.image_transform(img_2)
+        pixel_values_3 = self.image_transform(img_3)
+        pixel_values_4 = self.image_transform(img_4)
+        pixel_values = torch.cat([pixel_values_1, pixel_values_2, pixel_values_3, pixel_values_4], dim=0)
+        #print(f"pixel_values shape: {pixel_values.shape}")
 
         # [CRITICAL] We do not want to take the loss for anything but the predicted action tokens!
         labels[: -(len(action) + 1)] = IGNORE_INDEX

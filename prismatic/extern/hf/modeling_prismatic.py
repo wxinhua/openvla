@@ -117,10 +117,28 @@ class PrismaticVisionBackbone(nn.Module):
             return self.featurizer(pixel_values)
 
         # Split `pixel_values :: [bsz, 2 * 3, resolution, resolution]` =>> featurize =>> channel stack
+        #img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
+        #print(f"pixel_values.shape: {pixel_values.shape}")
+        bsz_1, channels, resolution, _ = pixel_values.shape
+        assert channels == 24, "Expected 24 channels in pixel_values"
+        pixel_values = pixel_values.view(bsz_1 * 4, 6, resolution, resolution)
+        #print(f"after pixel_values.shape: {pixel_values.shape}")
         img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
+        #print(f"img.shape: {img.shape}")
         patches, patches_fused = self.featurizer(img), self.fused_featurizer(img_fused)
+        #print(f"patches.shape: {patches.shape}")
+        bsz, channels, feature = patches.shape
+        grouped_patches = patches.view(bsz_1, bsz//bsz_1, channels, feature)
+        mean_patches = grouped_patches.mean(dim=1)
+        bsz, channels, feature = patches_fused.shape
+        grouped_patches_fused = patches_fused.view(bsz_1, bsz//bsz_1, channels, feature)
+        mean_patches_fused = grouped_patches_fused.mean(dim=1)
 
-        return torch.cat([patches, patches_fused], dim=2)
+        concat_patch = torch.cat([mean_patches, mean_patches_fused], dim=2)
+        #print(f"concat_patch.shape: {concat_patch.shape}")
+        
+
+        return concat_patch
 
 
 # === Prismatic Projector (nn.Module) Definitions ===
