@@ -28,11 +28,14 @@ from prismatic.extern.hf.configuration_prismatic import OpenVLAConfig
 from prismatic.extern.hf.modeling_prismatic import OpenVLAForActionPrediction
 from prismatic.extern.hf.processing_prismatic import PrismaticImageProcessor, PrismaticProcessor
 
+import psutil
+
 # Sane Defaults
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Initialize logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+log_file_path = "finetune.log"  # Specify the log file path
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', filename=log_file_path, filemode='w')
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -72,6 +75,10 @@ class FinetuneConfig:
 
     # fmt: on
 
+def print_memory_info(process, idx):
+    used_bytes = process.memory_info().rss
+    used_MB = used_bytes / (1024 * 1024)
+    logger.info(f"{idx}. used_MB: {used_MB:.2f} MB")
 
 @draccus.wrap()
 def finetune(cfg: FinetuneConfig) -> None:
@@ -210,6 +217,7 @@ def finetune(cfg: FinetuneConfig) -> None:
     recent_l1_losses = deque(maxlen=cfg.grad_accumulation_steps)
 
     # Train!
+    process = psutil.Process(os.getpid())
     with tqdm.tqdm(total=cfg.max_steps, leave=False) as progress:
         vla.train()
         optimizer.zero_grad()
@@ -272,6 +280,10 @@ def finetune(cfg: FinetuneConfig) -> None:
                     f"l1_loss={smoothened_l1_loss:.4f}"
                 )
 
+            # Print and log memory usage
+            if gradient_step_idx % 10 == 0:
+                print_memory_info(process, gradient_step_idx)
+
             # Optimizer Step
             if (batch_idx + 1) % cfg.grad_accumulation_steps == 0:
                 optimizer.step()
@@ -323,6 +335,9 @@ def finetune(cfg: FinetuneConfig) -> None:
 
                 # Block on Main Process Checkpointing
                 dist.barrier()
+
+            if gradient_step_idx % 500 == 0:
+                torch.cuda.empty_cache()
 
             # Stop training when max_steps is reached
             if gradient_step_idx == cfg.max_steps:
