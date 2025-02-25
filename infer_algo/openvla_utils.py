@@ -18,7 +18,7 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 ACTION_DIM = 7
 DATE = time.strftime("%Y_%m_%d")
 DATE_TIME = time.strftime("%Y_%m_%d-%H_%M_%S")
-DEVICE = torch.device("cuda:7") if torch.cuda.is_available() else torch.device("cpu")
+DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 np.set_printoptions(formatter={"float": lambda x: "{0:0.3f}".format(x)})
 
 # Initialize system prompt for OpenVLA v0.1.
@@ -79,11 +79,17 @@ def get_processor(pretrained_checkpoint):
 
 def get_vla_action(vla, processor, base_vla_name, obs, task_label, unnorm_key):
     """Generates an action with the VLA policy."""
-    # image_1 = Image.fromarray(obs["full_image"][:, :, :3])
-    # image_2 = Image.fromarray(obs["full_image"][:, :, 3:6])
-    # image_3 = Image.fromarray(obs["full_image"][:, :, 6:9])
-    # image_4 = Image.fromarray(obs["full_image"][:, :, 9:12])
-    # image = image.convert("RGB")
+    full_image = obs["full_image"].astype(np.uint8)
+
+    image_1 = Image.fromarray(full_image[:, :, :3])
+    image_1 = image_1.convert("RGB")
+    image_2 = Image.fromarray(full_image[:, :, 3:6])
+    image_2 = image_2.convert("RGB")
+    image_3 = Image.fromarray(full_image[:, :, 6:9])
+    image_3 = image_3.convert("RGB")
+    image_4 = Image.fromarray(full_image[:, :, 9:12])
+    image_4 = image_4.convert("RGB")
+    image = [image_1, image_2, image_3, image_4]
 
     # (If trained with image augmentations) Center crop image and then resize back up to original size.
     # IMPORTANT: Let's say crop scale == 0.9. To get the new height and width (post-crop), multiply
@@ -98,7 +104,7 @@ def get_vla_action(vla, processor, base_vla_name, obs, task_label, unnorm_key):
         prompt = f"In: What action should the robot take to {task_label.lower()}?\nOut:"
 
     # Process inputs.
-    inputs = processor(prompt, obs["full_image"]).to(DEVICE, dtype=torch.bfloat16)
+    inputs = processor(prompt, image).to(DEVICE, dtype=torch.bfloat16)
 
     # Get action.
     action = vla.predict_action(**inputs, unnorm_key=unnorm_key, do_sample=False)

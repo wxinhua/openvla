@@ -1,5 +1,5 @@
 import numpy as np
-from infer_algo.openvla_utils import get_vla, get_processor, get_vla_action
+from openvla_utils import get_vla, get_processor, get_vla_action
 import cv2
 import torch
 import os
@@ -12,7 +12,8 @@ class OpenVLA_Infer():
         self.load_in_4bit: bool = False                       # (For OpenVLA only) Load with 4-bit quantization
 
     def crop_image(self, image):
-        img = cv2.imdecode(image, cv2.IMREAD_COLOR)#[:, :, ::-1]
+        #img = cv2.imdecode(image, cv2.IMREAD_COLOR)#[:, :, ::-1]
+        img = image
         height, width, _ = img.shape
         square_size = min(width, height)
 
@@ -38,6 +39,7 @@ class OpenVLA_Infer():
             cam_img_resize = self.crop_image(cam_img)
             #print(f"shape is:{cam_img_resize.shape}")
             full_image= np.concatenate([full_image, cam_img_resize], axis=2)
+        print(f"full image shape is:{full_image.shape}")
 
         model = get_vla(self.pretrained_checkpoint, self.load_in_4bit, self.load_in_8bit)
         processor = get_processor(self.pretrained_checkpoint)
