@@ -12,7 +12,8 @@ from transformers import AutoConfig, AutoImageProcessor, AutoModelForVision2Seq,
 from prismatic.extern.hf.configuration_prismatic import OpenVLAConfig
 from prismatic.extern.hf.modeling_prismatic import OpenVLAForActionPrediction
 from prismatic.extern.hf.processing_prismatic import PrismaticImageProcessor, PrismaticProcessor
-
+import os
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 # Initialize important constants and pretty-printing mode in NumPy.
 ACTION_DIM = 7
 DATE = time.strftime("%Y_%m_%d")
@@ -26,7 +27,7 @@ OPENVLA_V01_SYSTEM_PROMPT = (
     "The assistant gives helpful, detailed, and polite answers to the user's questions."
 )
 
-def get_vla(cfg):
+def get_vla(pretrained_checkpoint, load_in_8bit, load_in_4bit):
     """Loads and returns a VLA model from checkpoint."""
     # Load VLA checkpoint.
     print("[*] Instantiating Pretrained VLA model")
@@ -37,13 +38,13 @@ def get_vla(cfg):
     AutoImageProcessor.register(OpenVLAConfig, PrismaticImageProcessor)
     AutoProcessor.register(OpenVLAConfig, PrismaticProcessor)
     AutoModelForVision2Seq.register(OpenVLAConfig, OpenVLAForActionPrediction)
-
+    
     vla = AutoModelForVision2Seq.from_pretrained(
-        cfg.pretrained_checkpoint,
+        pretrained_checkpoint,
         attn_implementation="flash_attention_2",
         torch_dtype=torch.bfloat16,
-        load_in_8bit=cfg.load_in_8bit,
-        load_in_4bit=cfg.load_in_4bit,
+        load_in_8bit=load_in_8bit,
+        load_in_4bit=load_in_4bit,
         low_cpu_mem_usage=True,
         trust_remote_code=False,
     )
@@ -51,11 +52,11 @@ def get_vla(cfg):
     # Move model to device.
     # Note: `.to()` is not supported for 8-bit or 4-bit bitsandbytes models, but the model will
     #       already be set to the right devices and casted to the correct dtype upon loading.
-    if not cfg.load_in_8bit and not cfg.load_in_4bit:
+    if not load_in_8bit and not load_in_4bit:
         vla = vla.to(DEVICE)
 
     # Load dataset stats used during finetuning (for action un-normalization).
-    dataset_statistics_path = os.path.join(cfg.pretrained_checkpoint, "dataset_statistics.json")
+    dataset_statistics_path = os.path.join(pretrained_checkpoint, "dataset_statistics.json")
     if os.path.isfile(dataset_statistics_path):
         with open(dataset_statistics_path, "r") as f:
             norm_stats = json.load(f)
@@ -70,16 +71,19 @@ def get_vla(cfg):
     return vla
 
 
-def get_processor(cfg):
+def get_processor(pretrained_checkpoint):
     """Get VLA model's Hugging Face processor."""
-    processor = AutoProcessor.from_pretrained(cfg.pretrained_checkpoint, trust_remote_code=False)
+    processor = AutoProcessor.from_pretrained(pretrained_checkpoint, trust_remote_code=False)
     return processor
 
 
 def get_vla_action(vla, processor, base_vla_name, obs, task_label, unnorm_key):
     """Generates an action with the VLA policy."""
-    image = Image.fromarray(obs["full_image"])
-    image = image.convert("RGB")
+    # image_1 = Image.fromarray(obs["full_image"][:, :, :3])
+    # image_2 = Image.fromarray(obs["full_image"][:, :, 3:6])
+    # image_3 = Image.fromarray(obs["full_image"][:, :, 6:9])
+    # image_4 = Image.fromarray(obs["full_image"][:, :, 9:12])
+    # image = image.convert("RGB")
 
     # (If trained with image augmentations) Center crop image and then resize back up to original size.
     # IMPORTANT: Let's say crop scale == 0.9. To get the new height and width (post-crop), multiply
@@ -94,7 +98,7 @@ def get_vla_action(vla, processor, base_vla_name, obs, task_label, unnorm_key):
         prompt = f"In: What action should the robot take to {task_label.lower()}?\nOut:"
 
     # Process inputs.
-    inputs = processor(prompt, image).to(DEVICE, dtype=torch.bfloat16)
+    inputs = processor(prompt, obs["full_image"]).to(DEVICE, dtype=torch.bfloat16)
 
     # Get action.
     action = vla.predict_action(**inputs, unnorm_key=unnorm_key, do_sample=False)
