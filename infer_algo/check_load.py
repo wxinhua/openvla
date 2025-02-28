@@ -27,13 +27,14 @@ episode_qpos = control_dict['puppet']['joint_position'][:][:,:6]
 episode_hand = control_dict['puppet']['joint_position'][:][:,6:]
 episode_action = control_dict['puppet']['joint_position'][:]
 episode_len = len(episode_qpos)
-for index in range(1):
-    image_dict, _, _, _, _ = read_h5files.execute(episode_path, camera_frame=index, use_depth_image=False)
+for index in range(5):
+    image_dict, control_dict, _, _, _ = read_h5files.execute(episode_path, camera_frame=index, use_depth_image=False, control_frame=index)
     _, fake_front_image = cv2.imencode('.jpg', image_dict[robot_infor['camera_sensors'][0]]['camera_front'])
     _, fake_left_image = cv2.imencode('.jpg', image_dict[robot_infor['camera_sensors'][0]]['camera_left'])
     _, fake_top_image = cv2.imencode('.jpg', image_dict[robot_infor['camera_sensors'][0]]['camera_top'])
     _, fake_left_wrist_image = cv2.imencode('.jpg', image_dict[robot_infor['camera_sensors'][0]]['camera_wrist_left'])
-    
+    state = control_dict['puppet']['joint_position'][:][index]
+    #print(f"state shape is:{state.shape}")
     fake_obs = {
         'images': {
             'front': fake_front_image,
@@ -41,13 +42,12 @@ for index in range(1):
             'top': fake_top_image,
             'wrist_left': fake_left_wrist_image
         },
-        # 'arm_joints': episode_qpos[index],
-        # 'hand_joints': episode_hand[index]
+        'state':state
     }
 
 #obs = {'images': {'front': np.random.rand(480,640,3), 'left': np.random.rand(480,640,3), 'top': np.random.rand(480,640,3), 'wrist_left': np.random.rand(480,640,3)}}
-task_name = 'pick_place_bread_ur'
-ground_action = torch.from_numpy(episode_action[min(index+1,episode_len-1)]).unsqueeze(0)
-action = openvla.infer(fake_obs, task_name)
-print(action)
-print(ground_action)
+    task_name = 'pick_place_bread_ur'
+    ground_action = torch.from_numpy(episode_action[min(index+1,episode_len-1)]).unsqueeze(0)
+    action = openvla.infer(fake_obs, task_name)
+    print(f"pred action:{action}")
+    print(f"ground_action:{ground_action}")

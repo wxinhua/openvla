@@ -30,16 +30,19 @@ class OpenVLA_Infer():
         #prompt
         language_instruction = {'pick_place_bread_ur':'pick up bread and place it on the plate'}
         unnorm_key: str = task_name
+
+        state = obs['state']
         # images
         full_image = obs['images']['front']
         full_image = self.crop_image(full_image)
         for cam_name in ['left','top','wrist_left']:
+            #print(f"cam name is:{cam_name}")
             cam_img = obs['images'][cam_name]
             #print(f"cam img type is:{type(cam_img)}, shape is:{cam_img.shape}")
             cam_img_resize = self.crop_image(cam_img)
             #print(f"shape is:{cam_img_resize.shape}")
             full_image= np.concatenate([full_image, cam_img_resize], axis=2)
-        print(f"full image shape is:{full_image.shape}")
+        #print(f"full image shape is:{full_image.shape}")
 
         model = get_vla(self.pretrained_checkpoint, self.load_in_4bit, self.load_in_8bit)
         processor = get_processor(self.pretrained_checkpoint)
@@ -56,7 +59,7 @@ class OpenVLA_Infer():
                     language_instruction[task_name], 
                     unnorm_key, 
                 )
-            
+            action = action + state
 
         return action
         

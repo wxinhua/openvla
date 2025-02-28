@@ -62,11 +62,12 @@ class RLDSBatchTransform:
         #   =>> IMPORTANT :: IF WE'RE USING HF LLM.forward(..., labels=labels), SHIFTING HAPPENS _INSIDE_ MODEL!
         input_ids, labels = torch.tensor(input_ids), torch.tensor(labels)
         pixel_values_1 = self.image_transform(img_1)
+        print(f"data input pixel_values_1 shape: {pixel_values_1.shape}")
         pixel_values_2 = self.image_transform(img_2)
         pixel_values_3 = self.image_transform(img_3)
         pixel_values_4 = self.image_transform(img_4)
         pixel_values = torch.cat([pixel_values_1, pixel_values_2, pixel_values_3, pixel_values_4], dim=0)
-        #print(f"pixel_values shape: {pixel_values.shape}")
+        print(f"data input pixel_values shape: {pixel_values.shape}")
 
         # [CRITICAL] We do not want to take the loss for anything but the predicted action tokens!
         labels[: -(len(action) + 1)] = IGNORE_INDEX

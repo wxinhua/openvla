@@ -161,8 +161,14 @@ class PrismaticImageProcessor(ImageProcessingMixin):
             images = [images]
 
         # Apply `self.img_transform` to each image (will return list of torch.Tensors); stack into "batched" Tensor
-        pixel_values = torch.stack([self.apply_transform(img.convert("RGB")) for img in images])
-        pixel_values = pixel_values.reshape(1, 24, 224, 224)
+        #pixel_values = torch.stack([self.apply_transform(img.convert("RGB")) for img in images])
+        pixel_values_list = [self.apply_transform(img.convert("RGB")) for img in images]
+        pixel_values = torch.cat(pixel_values_list, dim=0).unsqueeze(0)
+        #print(f"check Pixel Values Shape: {pixel_values.shape}")
+            
+
+        #print(f"1 Pixel Values Shape: {pixel_values.shape}")
+        #pixel_values = pixel_values.reshape(1, 24, 224, 224)
 
         # Return BatchFeature =>> note that for compatibility, constructor expects Dict[str, np.ndarray], so we convert
         return BatchFeature(data={"pixel_values": pixel_values.float().numpy()}, tensor_type=return_tensors)
