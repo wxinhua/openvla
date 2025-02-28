@@ -12,8 +12,8 @@ class OpenVLA_Infer():
         self.load_in_4bit: bool = False                       # (For OpenVLA only) Load with 4-bit quantization
 
     def crop_image(self, image):
-        #img = cv2.imdecode(image, cv2.IMREAD_COLOR)#[:, :, ::-1]
-        img = image
+        img = cv2.imdecode(image, cv2.IMREAD_COLOR)#[:, :, ::-1]
+        #img = image
         height, width, _ = img.shape
         square_size = min(width, height)
 

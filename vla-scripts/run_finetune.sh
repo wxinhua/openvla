@@ -1,8 +1,8 @@
 # export http_proxy=http://192.168.32.28:18000
 # export https_proxy=http://192.168.32.28:18000
 
-export HF_HOME=/media/users/will/huggingface_model
-export HUGGINGFACE_HUB_CACHE=/media/users/will/huggingface_model
+#export HF_HOME=/media/users/will/huggingface_model
+#export HUGGINGFACE_HUB_CACHE=/media/users/will/huggingface_model
 
 gpus=$1
 data_root_dir=$2
@@ -11,7 +11,7 @@ dataset_name=$4
 batch_size=$5
 image_aug=$6
 torchrun --standalone --nnodes 1 --nproc-per-node $gpus finetune_new.py \
-  --vla_path "openvla/openvla-7b" \
+  --vla_path /media/users/will/huggingface_model/models--openvla--openvla-7b/snapshots/31f090d05236101ebfc381b61c674dd4746d4ce0 \
   --data_root_dir $data_root_dir \
   --dataset_name $dataset_name \
   --run_root_dir $run_root_dir \
