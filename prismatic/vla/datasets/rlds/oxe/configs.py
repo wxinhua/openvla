@@ -677,11 +677,25 @@ OXE_DATASET_CONFIGS = {
         "state_encoding": StateEncoding.JOINT,
         "action_encoding": ActionEncoding.JOINT_POS,
     },
-    "test_nyu_rot_dataset_converted_externally_to_rlds": {
+    "put_corn_in_the_oven": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
-        "state_obs_keys": ["eef_state", None, "gripper_state"],
-        "state_encoding": StateEncoding.POS_EULER,
-        "action_encoding": ActionEncoding.EEF_POS,
+        "state_obs_keys": ["joint_pos","gripper"],
+        "state_encoding": StateEncoding.JOINT_BIMANUAL,
+        "action_encoding": ActionEncoding.JOINT_POS_BIMANUAL,
+    },
+    "ur_put_steamed_bun_on_the_steamer_100": {
+        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "state_obs_keys": ["joint_pos","gripper"],
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS,
+    },
+    "flip_the_cup_upright": {
+        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "state_obs_keys": ["joint_pos","gripper"],
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS,
     },
 }

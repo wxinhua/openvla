@@ -211,8 +211,10 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
         ("pick_place_bread_ur", 1.0),
     ],
 
-    "test":[
-        ("test_nyu_rot_dataset_converted_externally_to_rlds", 1.0),
+    "gen_dataset":[
+        # ("put_corn_in_the_oven", 1.0),
+        # ("ur_put_steamed_bun_on_the_steamer_100", 1.0),
+        ("flip_the_cup_upright", 1.0),
     ]
 }
 # fmt: on

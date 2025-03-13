@@ -51,8 +51,8 @@ class FinetuneConfig:
 
     # Fine-tuning Parameters
     batch_size: int = 16                                            # Fine-tuning batch size
-    max_steps: int = 200_000                                        # Max number of fine-tuning steps
-    save_steps: int = 5000                                          # Interval for checkpoint saving
+    max_steps: int = 40_000                                        # Max number of fine-tuning steps
+    save_steps: int = 10_000                                          # Interval for checkpoint saving
     learning_rate: float = 5e-4                                     # Fine-tuning learning rate
     grad_accumulation_steps: int = 1                                # Gradient accumulation steps
     image_aug: bool = True                                          # Whether to train with image augmentations
@@ -222,6 +222,8 @@ def finetune(cfg: FinetuneConfig) -> None:
         vla.train()
         optimizer.zero_grad()
         for batch_idx, batch in enumerate(dataloader):
+            # if batch_idx % 20 == 0:
+            #     print(f"Batch {batch_idx}: {batch}")
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 output: CausalLMOutputWithPast = vla(
                     input_ids=batch["input_ids"].to(device_id),

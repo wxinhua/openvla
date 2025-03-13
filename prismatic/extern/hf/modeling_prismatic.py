@@ -110,7 +110,38 @@ class PrismaticVisionBackbone(nn.Module):
             for module in self.fused_featurizer.modules():
                 if isinstance(module, LayerScale):
                     ls_apply_patch(module)
+    ############# 4 views #################
+    # def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
+    #     """Run image (`pixel_values`) through featurizer; if channel-stacked, then dispatch and sequence stack."""
+    #     if not self.use_fused_vision_backbone:
+    #         return self.featurizer(pixel_values)
 
+    #     # Split `pixel_values :: [bsz, 2 * 3, resolution, resolution]` =>> featurize =>> channel stack
+    #     #img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
+    #     #print(f"pixel_values.shape: {pixel_values.shape}")
+    #     bsz_1, channels, resolution, _ = pixel_values.shape
+    #     assert channels == 24, "Expected 24 channels in pixel_values"
+    #     pixel_values = pixel_values.view(bsz_1 * 4, 6, resolution, resolution)
+    #     #print(f"after pixel_values.shape: {pixel_values.shape}")
+    #     img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
+    #     #print(f"img.shape: {img.shape}")
+    #     patches, patches_fused = self.featurizer(img), self.fused_featurizer(img_fused)
+    #     #print(f"patches.shape: {patches.shape}")
+    #     bsz, channels, feature = patches.shape
+    #     grouped_patches = patches.view(bsz_1, bsz//bsz_1, channels, feature)
+    #     #print(f"grouped_patches.shape: {grouped_patches.shape}")
+    #     mean_patches = grouped_patches.mean(dim=1)
+    #     #print(f"mean_patches.shape: {mean_patches.shape}")
+    #     bsz, channels, feature = patches_fused.shape
+    #     grouped_patches_fused = patches_fused.view(bsz_1, bsz//bsz_1, channels, feature)
+    #     mean_patches_fused = grouped_patches_fused.mean(dim=1)
+
+    #     concat_patch = torch.cat([mean_patches, mean_patches_fused], dim=2)
+    #     #print(f"concat_patch.shape: {concat_patch.shape}")
+        
+
+    #     return concat_patch
+    #################### 3 views ###########################3
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
         """Run image (`pixel_values`) through featurizer; if channel-stacked, then dispatch and sequence stack."""
         if not self.use_fused_vision_backbone:
@@ -120,8 +151,8 @@ class PrismaticVisionBackbone(nn.Module):
         #img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
         #print(f"pixel_values.shape: {pixel_values.shape}")
         bsz_1, channels, resolution, _ = pixel_values.shape
-        assert channels == 24, "Expected 24 channels in pixel_values"
-        pixel_values = pixel_values.view(bsz_1 * 4, 6, resolution, resolution)
+        assert channels == 18, "Expected 24 channels in pixel_values"
+        pixel_values = pixel_values.view(bsz_1 * 3, 6, resolution, resolution)
         #print(f"after pixel_values.shape: {pixel_values.shape}")
         img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
         #print(f"img.shape: {img.shape}")
@@ -141,6 +172,17 @@ class PrismaticVisionBackbone(nn.Module):
         
 
         return concat_patch
+    ########## single view ################
+    # def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
+    #     """Run image (`pixel_values`) through featurizer; if channel-stacked, then dispatch and sequence stack."""
+    #     if not self.use_fused_vision_backbone:
+    #         return self.featurizer(pixel_values)
+
+    #     # Split `pixel_values :: [bsz, 2 * 3, resolution, resolution]` =>> featurize =>> channel stack
+    #     img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
+    #     patches, patches_fused = self.featurizer(img), self.fused_featurizer(img_fused)
+
+    #     return torch.cat([patches, patches_fused], dim=2)
 
 
 # === Prismatic Projector (nn.Module) Definitions ===

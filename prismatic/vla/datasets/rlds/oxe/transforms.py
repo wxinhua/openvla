@@ -843,6 +843,48 @@ def libero_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
 def ur_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     return trajectory
 
+def ur_dataset_test_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    
+    # binary_action = tf.where(trajectory["action"][:, 6] >= 0.5, 0.98, 0.02)
+    
+    # # Concatenate action and gripper action
+    # trajectory["action"] = tf.concat(
+    #     [
+    #         trajectory["action"][:, :6],
+    #         binary_action[:, None],
+    #     ],
+    #     axis=1, 
+    # )
+
+    # Update observation
+    trajectory["observation"]["joint_pos"] = trajectory["observation"]["state"][:, :6]
+    trajectory["observation"]["gripper"] = tf.expand_dims(trajectory["observation"]["state"][:, 6], axis=1)
+    
+    return trajectory
+
+def franka_dual_fr3_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    left_joint_pos = trajectory["observation"]["state"][:, :7]
+    right_joint_pos = trajectory["observation"]["state"][:, 8:15]
+    #print(f"left_joint_pos: {left_joint_pos.shape}")
+    trajectory["observation"]["joint_pos"] = tf.concat([left_joint_pos, right_joint_pos], axis=1)
+    #print(f"joint_pos: {trajectory['observation']['joint_pos'].shape}")
+    left_hand_pos = trajectory["observation"]["state"][:, 7][:, None]
+    right_hand_pos = trajectory["observation"]["state"][:, 15][:, None]
+    #print(f"left_hand_pos: {left_hand_pos.shape}")
+    trajectory["observation"]["gripper"] = tf.concat([left_hand_pos, right_hand_pos], axis=1)
+    #print(f"gripper: {trajectory['observation']['gripper'].shape}")
+    trajectory["action"] = tf.concat(
+        [
+            trajectory["action"][:, :8],
+            tf.where(trajectory["action"][:, 8]>= 0.5, 0.98, 0.02)[:, None],
+            trajectory["action"][:, 9:15],
+            tf.where(trajectory["action"][:, 15]>= 0.5, 0.98, 0.02)[:, None],
+        ],
+        axis=1,
+    )
+    return trajectory
+
+
 
 # === Registry ===
 OXE_STANDARDIZATION_TRANSFORMS = {
@@ -923,7 +965,9 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "libero_goal_no_noops": libero_dataset_transform,
     "libero_10_no_noops": libero_dataset_transform,
 
-    "pick_place_bread_ur": ur_dataset_transform,
+    "pick_place_bread_ur": ur_dataset_test_transform,
 
-    "test_nyu_rot_dataset_converted_externally_to_rlds": nyu_rot_dataset_transform,
+    "put_corn_in_the_oven": ur_dataset_transform,
+    "ur_put_steamed_bun_on_the_steamer_100": ur_dataset_test_transform,
+    "flip_the_cup_upright": ur_dataset_transform,
 }

@@ -87,9 +87,10 @@ def get_vla_action(vla, processor, base_vla_name, obs, task_label, unnorm_key):
     image_2 = image_2.convert("RGB")
     image_3 = Image.fromarray(full_image[:, :, 6:9])
     image_3 = image_3.convert("RGB")
-    image_4 = Image.fromarray(full_image[:, :, 9:12])
-    image_4 = image_4.convert("RGB")
-    image = [image_1, image_2, image_3, image_4]
+    #image_4 = Image.fromarray(full_image[:, :, 9:12])
+    #image_4 = image_4.convert("RGB")
+    #image = [image_1, image_2, image_3, image_4]
+    image = [image_1, image_2, image_3]
 
     # (If trained with image augmentations) Center crop image and then resize back up to original size.
     # IMPORTANT: Let's say crop scale == 0.9. To get the new height and width (post-crop), multiply
