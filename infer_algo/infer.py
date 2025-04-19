@@ -10,7 +10,7 @@ class OpenVLA_Infer():
         self.pretrained_checkpoint=checkpoint_path     # Pretrained checkpoint path
         self.load_in_8bit: bool = False                       # (For OpenVLA only) Load with 8-bit quantization
         self.load_in_4bit: bool = False                       # (For OpenVLA only) Load with 4-bit quantization
-
+        self.model = get_vla(self.pretrained_checkpoint, self.load_in_4bit, self.load_in_8bit)
     def crop_image(self, image):
         img = cv2.imdecode(image, cv2.IMREAD_COLOR)#[:, :, ::-1]
         #img = image
@@ -28,23 +28,25 @@ class OpenVLA_Infer():
 
     def infer(self, obs, task_name):
         #prompt
-        language_instruction = {'pick_place_bread_ur':'pick up bread and place it on the plate'}
+        language_instruction = {'pick_place_bread_ur':'pick up bread and place it on the plate',
+                                'ur_put_steamed_bun_on_the_steamer_100':'put the steamed bun on the steamer',
+                                'ur_put_corn_into_the_pot':'pick up the corn and place it into the pot',}
         unnorm_key: str = task_name
 
         state = obs['state']
         # images
-        full_image = obs['images']['front']
-        full_image = self.crop_image(full_image)
-        for cam_name in ['left','top','wrist_left']:
-            #print(f"cam name is:{cam_name}")
-            cam_img = obs['images'][cam_name]
-            #print(f"cam img type is:{type(cam_img)}, shape is:{cam_img.shape}")
-            cam_img_resize = self.crop_image(cam_img)
-            #print(f"shape is:{cam_img_resize.shape}")
-            full_image= np.concatenate([full_image, cam_img_resize], axis=2)
-        #print(f"full image shape is:{full_image.shape}")
-
-        model = get_vla(self.pretrained_checkpoint, self.load_in_4bit, self.load_in_8bit)
+        # full_image = obs['images']['front']
+        # full_image = self.crop_image(full_image)
+        # for cam_name in ['left','top','wrist_left']:
+        #     #print(f"cam name is:{cam_name}")
+        #     cam_img = obs['images'][cam_name]
+        #     #print(f"cam img type is:{type(cam_img)}, shape is:{cam_img.shape}")
+        #     cam_img_resize = self.crop_image(cam_img)
+        #     #print(f"shape is:{cam_img_resize.shape}")
+        #     full_image= np.concatenate([full_image, cam_img_resize], axis=2)
+        # #print(f"full image shape is:{full_image.shape}")
+        full_image = obs['images']['left']
+        
         processor = get_processor(self.pretrained_checkpoint)
         print("ready")
         
@@ -52,14 +54,14 @@ class OpenVLA_Infer():
 
             obs = {"full_image": full_image, "state": None}
             action = get_vla_action(
-                    model, 
+                    self.model, 
                     processor, 
                     self.pretrained_checkpoint, 
                     obs, 
                     language_instruction[task_name], 
                     unnorm_key, 
                 )
-            action = action + state
+            action[:6] = action[:6] + state[:6]
 
         return action
         

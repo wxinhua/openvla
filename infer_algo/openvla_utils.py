@@ -81,16 +81,16 @@ def get_vla_action(vla, processor, base_vla_name, obs, task_label, unnorm_key):
     """Generates an action with the VLA policy."""
     full_image = obs["full_image"].astype(np.uint8)
 
-    image_1 = Image.fromarray(full_image[:, :, :3])
-    image_1 = image_1.convert("RGB")
-    image_2 = Image.fromarray(full_image[:, :, 3:6])
-    image_2 = image_2.convert("RGB")
-    image_3 = Image.fromarray(full_image[:, :, 6:9])
-    image_3 = image_3.convert("RGB")
-    image_4 = Image.fromarray(full_image[:, :, 9:12])
-    image_4 = image_4.convert("RGB")
-    image = [image_1, image_2, image_3, image_4]
-
+    # image_1 = Image.fromarray(full_image[:, :, :3])
+    # image_1 = image_1.convert("RGB")
+    # image_2 = Image.fromarray(full_image[:, :, 3:6])
+    # image_2 = image_2.convert("RGB")
+    # image_3 = Image.fromarray(full_image[:, :, 6:9])
+    # image_3 = image_3.convert("RGB")
+    # image_4 = Image.fromarray(full_image[:, :, 9:12])
+    # image_4 = image_4.convert("RGB")
+    # image = [image_1, image_2, image_3, image_4]
+    image = Image.fromarray(full_image).convert("RGB")
     # (If trained with image augmentations) Center crop image and then resize back up to original size.
     # IMPORTANT: Let's say crop scale == 0.9. To get the new height and width (post-crop), multiply
     #            the original height and width by sqrt(0.9) -- not 0.9!
